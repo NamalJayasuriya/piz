@@ -7,16 +7,16 @@ import time
 import sys
 import RPi.GPIO as GPIO
 import os
-#import config
+
 
 #TODO refactore paths
 sys.path.append(os.path.abspath('./utils'))
 sys.path.append(os.path.abspath('./models'))
 sys.path.append(os.path.abspath('./handlers'))
-#sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('.'))
 
 print os.getcwd()
-#from config import *
+from config import *
 from crypto_utils import *
 from senz_handler import *
 from senz import *
@@ -97,7 +97,7 @@ class SenzcProtocol(DatagramProtocol):
         # send pubkey to server via SHARE senz
         pubkey = get_pubkey()
         receiver = 'mysensors'
-        sender ='homepi'
+        sender = homeName
         senz = "SHARE #pubkey %s #time %s @%s ^%s" % \
                          (pubkey, time.time(), receiver, sender)
         signed_senz = sign_senz(senz)
@@ -105,9 +105,9 @@ class SenzcProtocol(DatagramProtocol):
         self.transport.write(signed_senz)
     
     def share_attribute(self):
-        receiver = 'userpi'
-        sender = 'homepi'
-        senz = "SHARE  #app homez #s1 #s2 #s3 #s4 #time %s @%s ^%s" %(time.time(), receiver, sender)
+        receiver = userName
+        sender = homeName
+        senz = "SHARE #homez #s1 #s2 #s3 #s4 #time %s @%s ^%s" %(time.time(), receiver, sender)
         signed_senz = sign_senz(senz)
         self.transport.write(signed_senz)
      
@@ -127,7 +127,7 @@ class SenzcProtocol(DatagramProtocol):
 
         # send ping message to server via DATA senz
         receiver = 'mysensors'
-        sender ='homepi'
+        sender =homeName
         senz = "DATA #time %s @%s ^%s" % \
                                     (time.time(), receiver, sender)
         signed_senz = sign_senz(senz)
@@ -183,9 +183,10 @@ def start():
     have to provide server host and port details form here.(read from config)
     """
     # TODO get host and port from config
-    host = '10.42.0.1'
-    #h = 'udp.mysensors.info'
-    #host = socket.gethostbyname(h)
+    #host = '10.42.0.1'
+    #h = 'localhost'
+    h = 'udp.mysensors.info'
+    host = socket.gethostbyname(h)
     port = 9090
     
     # start ptotocol
