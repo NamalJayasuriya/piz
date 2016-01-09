@@ -65,7 +65,6 @@ class SenzHandler():
             for i in data:
                 if i in var:
                     get[i] = GPIO.input(sw[i])
-		    get[i]=0
 		    self.send_data("GetResponse",get,senz.sender,senz.receiver)        
         if senz.type == 'DATA':
             print senz.attributes['#msg']

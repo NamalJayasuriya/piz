@@ -55,8 +55,7 @@ class SenzHandler():
                 if i in var and data[i]!="":
                     print i,"-",data[i] 
                     GPIO.output(sw[i],sw[data[i]])
-		    #print "======================set GPIO OUT==================="
-                    get[i]=sw[data[i]]
+		    get[i]=sw[data[i]]
             self.send_data("PutDone",get,senz.sender,senz.receiver)
             #self.share_attribute()
             
@@ -66,8 +65,6 @@ class SenzHandler():
             for i in data:
                 if i in var:
                     get[i] = GPIO.input(sw[i])
-		    get[i]=0
-		    #print "================== get GPIO IN=====================" 
 		    self.send_data("GetResponse",get,senz.sender,senz.receiver)        
         if senz.type == 'DATA':
             print senz.attributes['#msg']
