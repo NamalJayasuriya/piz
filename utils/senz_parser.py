@@ -53,7 +53,7 @@ def parse(message):
         elif token.startswith('#'):
             if tokens[i + 1].startswith('#') or tokens[i + 1].startswith('@') \
                or tokens[i + 1].startswith('^'):
-                senz.attributes[token] = ''
+                senz.attributes[token[1:]] = ''
             else:
                 senz.attributes[token[1:]] = tokens[i + 1]
                 i += 2

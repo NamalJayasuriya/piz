@@ -51,9 +51,13 @@ class SenzcProtocol(DatagramProtocol):
         print '*** Client Started ***'
         self.transport.connect(self.host, self.port)
 
-        # share public key on start
-        self.share_pubkey()
-        self.share_attribute()
+        # if state is INITIAL share public key on start
+        if dstate=="INITIAL":
+           self.share_pubkey()
+        else:
+           handler = SenzHandler(self.transport)
+           handler.share_attribute()
+
         # start ping sender to send ping messages to server in everty 30 mins
         lc = LoopingCall(self.send_ping)
         lc.start(60)
@@ -63,7 +67,7 @@ class SenzcProtocol(DatagramProtocol):
         Call when datagram protocol stops. Need to clear global connection if
         exits from here
         """
-        print 'client stopped'
+        print '*** Client Stopped ***'
 
     def datagramReceived(self, datagram, host):
         """
@@ -92,8 +96,6 @@ class SenzcProtocol(DatagramProtocol):
             @mysensors
             ^<sender> <digital signature>
         """
-        # TODO get sender and receiver config
-
         # send pubkey to server via SHARE senz
         pubkey = get_pubkey()
         receiver = server
@@ -103,18 +105,6 @@ class SenzcProtocol(DatagramProtocol):
         signed_senz = sign_senz(senz)
 
         self.transport.write(signed_senz)
-    
-    def share_attribute(self):
-        receiver = userName
-        sender = homeName
-        swlist=""
-        for sw in gpioPorts:
-            swlist+="#"+sw[0]+" "
-        senz = "SHARE #homez %s#time %s @%s ^%s" %(swlist,time.time(), receiver, sender)
-        signed_senz = sign_senz(senz)
-        print signed_senz
-        self.transport.write(signed_senz)
-     
 
     def send_ping(self):
         """
@@ -127,15 +117,12 @@ class SenzcProtocol(DatagramProtocol):
             @mysensors
             ^<sender> <digital signature>
         """
-        # TODO get sender and receiver config
-
         # send ping message to server via DATA senz
         receiver = server
         sender =homeName
         senz = "DATA #time %s @%s ^%s" % \
                                     (time.time(), receiver, sender)
         signed_senz = sign_senz(senz)
-
         self.transport.write(signed_senz)
 
     def handle_datagram(self, datagram):
@@ -157,7 +144,6 @@ class SenzcProtocol(DatagramProtocol):
             d = threads.deferToThread(handler.handleSenz, senz)
             d.addCallback(handler.postHandle)
 
-
 def init_pi():
     GPIO.setwarnings(False)
     #GPIO.setmode(GPIO.BCM)
@@ -169,17 +155,18 @@ def init_pi():
     print "RaspberriPI initialized"
     for sw in sws:
         #print sws
-        GPIO.output(sws[sw],0)
+        GPIO.output(sws[sw],1)
         time.sleep(2)
     
 def init():
     """
     Init client certificates from here. All keys will be stored in .keys/
-    directory in project root. We have to verify thie content of that directory
+    directory in project root. We have to verify this content of that directory
     while initializing the keys
     """
     # init keys via crypto utils
-    init_keys()
+    if dstate=="INITIAL":
+       init_keys()
     init_pi()
 
 def start():
@@ -187,18 +174,13 @@ def start():
     Start upd senz protocol from here. It means connecting to senz server. We
     have to provide server host and port details form here.(read from config)
     """
-    # TODO get host and port from config
-    #host = '10.42.0.1'
-    #h = 'localhost'
-    #h = 'udp.mysensors.info'
+   
     host = socket.gethostbyname(hostName)
-    port = 9090
     
     # start ptotocol
     protocol = SenzcProtocol(host, port)
     reactor.listenUDP(0, protocol)
     reactor.run()
-
 
 if __name__ == '__main__':
     init()

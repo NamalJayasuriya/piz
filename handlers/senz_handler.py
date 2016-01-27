@@ -3,6 +3,7 @@ import sys
 import os
 import RPi.GPIO as GPIO
 
+
 #TODO refactore paths
 sys.path.append(os.path.abspath('./utils'))
 sys.path.append(os.path.abspath('./models'))
@@ -10,8 +11,7 @@ sys.path.append(os.path.abspath('.'))
 
 from senz_parser import *
 from crypto_utils import *
-from config import*
-
+from config import *
 
 class SenzHandler():
     """
@@ -33,11 +33,6 @@ class SenzHandler():
             trnsport - twisted transport instance
         """
         self.transport = transport
-        #Set the GPIO Ports
-        GPIO.setmode(GPIO.BOARD)
-        GPIO.setwarnings(False)
-        GPIO.setup(13,GPIO.OUT)
-        GPIO.setup(15,GPIO.OUT)
 
     def handleSenz(self, senz):
         """
@@ -48,8 +43,7 @@ class SenzHandler():
         print 'senz received %s' % senz.type
         print 'senz sender %s' % senz.sender
         print 'senz receiver %s' % senz.receiver
-        #sw={'on':1,'off':0,'#s1':13,'#s2':15,'#s3':24,'#s4':25,'#time':'time','#msg':'msg','#pubkey':'pubkey'}
-        #var=['#s1','#s2','#s3','#s4']
+
         data=senz.attributes 
         print data
         if senz.type=='PUT':
@@ -61,12 +55,11 @@ class SenzHandler():
                     status=0
                     if data[i]=="on": status=1
                     GPIO.output(sws[i],status)
-                    print "**************",sws[i]," ",status
-                    #GPIO.output(sw[i],sw[data[i]])
+                    #print "*** ",sws[i]," ",status
 		    get[i]=data[i]
+
             self.send_data("PutDone",get,senz.sender,senz.receiver)
-            #self.share_attribute()
-            
+                  
         if senz.type=='GET':
             print 'get message'
             get={} 
@@ -75,11 +68,23 @@ class SenzHandler():
                     get[i]='off'
                     if GPIO.input(sws[i])==1: get[i]='on'
 		    self.send_data("GetResponse",get,senz.sender,senz.receiver)        
+
         if senz.type == 'DATA':
             print senz.attributes['msg']
             if senz.attributes['msg'] == 'UserCreated':
                 # SHARE gpio senz from here
                 self.share_attribute()
+                # TODO: set configureation to READY state
+
+    def share_attribute(self):
+        receiver = userName
+        sender = homeName
+        swlist=""
+        for sw in gpioPorts:
+            swlist+="#"+sw[0]+" "
+        senz = "SHARE #homez %s#time %s @%s ^%s" %(swlist,time.time(), receiver, sender)
+        signed_senz = sign_senz(senz)
+        self.transport.write(signed_senz)
 
     def postHandle(self, arg):
         """
@@ -88,15 +93,7 @@ class SenzHandler():
         """
         # self.transport.write('senz')
         print "handled"
-
-
-    def share_attribute(self):
-        receiver = userName
-        sender = homeName
-        senz = "SHARE #homez #s1 #s2 #s3 #s4 #time %s @%s ^%s" %(time.time(), receiver, sender)
-        signed_senz = sign_senz(senz)
-        self.transport.write(signed_senz)
-        
+ 
     def send_data(self,msg,data,receiver,sender):
         #receiver = 'userpi'
         #sender = 'homepi'
