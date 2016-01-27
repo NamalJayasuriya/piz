@@ -48,7 +48,7 @@ class SenzcProtocol(DatagramProtocol):
             3. Finall need to start looping call to send ping messages to
                server in every 30 mins
         """
-        print 'client started'
+        print '*** Client Started ***'
         self.transport.connect(self.host, self.port)
 
         # share public key on start
@@ -96,7 +96,7 @@ class SenzcProtocol(DatagramProtocol):
 
         # send pubkey to server via SHARE senz
         pubkey = get_pubkey()
-        receiver = 'mysensors'
+        receiver = server
         sender = homeName
         senz = "SHARE #pubkey %s #time %s @%s ^%s" % \
                          (pubkey, time.time(), receiver, sender)
@@ -107,8 +107,12 @@ class SenzcProtocol(DatagramProtocol):
     def share_attribute(self):
         receiver = userName
         sender = homeName
-        senz = "SHARE #homez #s1 #s2 #s3 #s4 #time %s @%s ^%s" %(time.time(), receiver, sender)
+        swlist=""
+        for sw in gpioPorts:
+            swlist+="#"+sw[0]+" "
+        senz = "SHARE #homez %s#time %s @%s ^%s" %(swlist,time.time(), receiver, sender)
         signed_senz = sign_senz(senz)
+        print signed_senz
         self.transport.write(signed_senz)
      
 
@@ -126,7 +130,7 @@ class SenzcProtocol(DatagramProtocol):
         # TODO get sender and receiver config
 
         # send ping message to server via DATA senz
-        receiver = 'mysensors'
+        receiver = server
         sender =homeName
         senz = "DATA #time %s @%s ^%s" % \
                                     (time.time(), receiver, sender)
@@ -155,17 +159,18 @@ class SenzcProtocol(DatagramProtocol):
 
 
 def init_pi():
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(22,GPIO.OUT)
-    GPIO.setup(23,GPIO.OUT)
-    GPIO.setup(24,GPIO.OUT)
-    GPIO.setup(25,GPIO.OUT)
     GPIO.setwarnings(False)
+    #GPIO.setmode(GPIO.BCM)
+    GPIO.setmode(GPIO.BOARD)
+    for sw in sws:
+        GPIO.setup(sws[sw],GPIO.OUT)
+    
+    #GPIO.setwarnings(False)
     print "RaspberriPI initialized"
-    GPIO.output(22,1)
-    time.sleep(1)
-    GPIO.output(22,0)
-
+    for sw in sws:
+        #print sws
+        GPIO.output(sws[sw],0)
+        time.sleep(2)
     
 def init():
     """
@@ -185,8 +190,8 @@ def start():
     # TODO get host and port from config
     #host = '10.42.0.1'
     #h = 'localhost'
-    h = 'udp.mysensors.info'
-    host = socket.gethostbyname(h)
+    #h = 'udp.mysensors.info'
+    host = socket.gethostbyname(hostName)
     port = 9090
     
     # start ptotocol

@@ -39,6 +39,8 @@ def parse(message):
     # senz signature comes at the end
     senz.signature = tokens.pop()
 
+    senz.attributes={}
+
     i = 0
     while i < len(tokens):
         token = tokens[i]
@@ -53,7 +55,7 @@ def parse(message):
                or tokens[i + 1].startswith('^'):
                 senz.attributes[token] = ''
             else:
-                senz.attributes[token] = tokens[i + 1]
+                senz.attributes[token[1:]] = tokens[i + 1]
                 i += 2
                 continue
 

@@ -33,8 +33,12 @@ class SenzHandler():
             trnsport - twisted transport instance
         """
         self.transport = transport
+        #Set the GPIO Ports
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setwarnings(False)
+        GPIO.setup(13,GPIO.OUT)
+        GPIO.setup(15,GPIO.OUT)
 
-    
     def handleSenz(self, senz):
         """
         Handle differennt types of senz from here. This function will be called
@@ -44,18 +48,22 @@ class SenzHandler():
         print 'senz received %s' % senz.type
         print 'senz sender %s' % senz.sender
         print 'senz receiver %s' % senz.receiver
-        sw={'on':1,'off':0,'#s1':22,'#s2':23,'#s3':24,'#s4':25,'#time':'time','#msg':'msg','#pubkey':'pubkey'}
-        var=['#s1','#s2','#s3','#s4']
+        #sw={'on':1,'off':0,'#s1':13,'#s2':15,'#s3':24,'#s4':25,'#time':'time','#msg':'msg','#pubkey':'pubkey'}
+        #var=['#s1','#s2','#s3','#s4']
         data=senz.attributes 
         print data
         if senz.type=='PUT':
             get={}
             for i in data:
-                print i," in senz attributes"
-                if i in var and data[i]!="":
-                    print i,"-",data[i] 
-                    GPIO.output(sw[i],sw[data[i]])
-		    get[i]=sw[data[i]]
+                #print i," in senz attributes"
+                if i in sws.keys() and data[i]!="":
+                    print i,"-",data[i]
+                    status=0
+                    if data[i]=="on": status=1
+                    GPIO.output(sws[i],status)
+                    print "**************",sws[i]," ",status
+                    #GPIO.output(sw[i],sw[data[i]])
+		    get[i]=data[i]
             self.send_data("PutDone",get,senz.sender,senz.receiver)
             #self.share_attribute()
             
@@ -63,12 +71,13 @@ class SenzHandler():
             print 'get message'
             get={} 
             for i in data:
-                if i in var:
-                    get[i] = GPIO.input(sw[i])
+                if i in sws.keys():
+                    get[i]='off'
+                    if GPIO.input(sws[i])==1: get[i]='on'
 		    self.send_data("GetResponse",get,senz.sender,senz.receiver)        
         if senz.type == 'DATA':
-            print senz.attributes['#msg']
-            if senz.attributes['#msg'] == 'UserCreated':
+            print senz.attributes['msg']
+            if senz.attributes['msg'] == 'UserCreated':
                 # SHARE gpio senz from here
                 self.share_attribute()
 
