@@ -3,9 +3,9 @@ Raspberry Pi module Senz Client for Smart home Apllication
 
 Directry Structure
 ▾ handlers/ 
-    __init__.py
-    senz_handler.py
-    senz_handler.pyc
+	__init__.py
+	senz_handler.py
+	senz_handler.pyc
 ▾ models/
     __init__.py 
     senz.py
