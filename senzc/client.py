@@ -155,7 +155,7 @@ def init_pi():
     print "RaspberriPI initialized"
     for sw in sws:
         #print sws
-        GPIO.output(sws[sw],1)
+        GPIO.output(sws[sw],0)
         time.sleep(2)
     
 def init():
