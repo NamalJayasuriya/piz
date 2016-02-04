@@ -98,7 +98,7 @@ class SenzHandler():
     def send_data(self,msg,data,receiver,sender):
         #receiver = 'userpi'
         #sender = 'homepi'
-        senz="DATA #app homez #msg "+msg
+        senz="DATA #msg "+msg
         for i in data:
             senz=senz+" #"+i+" "+str(data[i])
 
