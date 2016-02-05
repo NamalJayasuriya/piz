@@ -67,7 +67,7 @@ class SenzHandler():
                 if i in sws.keys():
                     get[i]='off'
                     if GPIO.input(sws[i])==1: get[i]='on'
-		    self.send_data("GetResponse",get,senz.sender,senz.receiver)        
+            self.send_data("GetResponse",get,senz.sender,senz.receiver)        
 
         if senz.type == 'DATA':
             print senz.attributes['msg']
@@ -85,6 +85,7 @@ class SenzHandler():
         senz = "SHARE #homez %s#time %s @%s ^%s" %(swlist,time.time(), receiver, sender)
         signed_senz = sign_senz(senz)
         self.transport.write(signed_senz)
+        print signed_senz
 
     def postHandle(self, arg):
         """
@@ -97,9 +98,9 @@ class SenzHandler():
     def send_data(self,msg,data,receiver,sender):
         #receiver = 'userpi'
         #sender = 'homepi'
-        senz="DATA #app homez #msg "+msg
+        senz="DATA #msg "+msg
         for i in data:
-            senz=senz+" "+i+" "+str(data[i])
+            senz=senz+" #"+i+" "+str(data[i])
 
         senz = senz+" #time %s @%s ^%s" %(time.time(),receiver, sender)
         print senz
