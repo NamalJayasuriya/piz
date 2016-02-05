@@ -5,7 +5,6 @@ from twisted.internet import reactor, threads
 import socket
 import time
 import sys
-import RPi.GPIO as GPIO
 import os
 
 
@@ -20,6 +19,8 @@ from config import *
 from crypto_utils import *
 from senz_handler import *
 from senz import *
+if GPIO:
+ import RPi.GPIO as GPIO
 
 
 class SenzcProtocol(DatagramProtocol):
@@ -167,7 +168,8 @@ def init():
     # init keys via crypto utils
     if dstate=="INITIAL":
        init_keys()
-    init_pi()
+    if GPIO:
+       init_pi()
 
 def start():
     """

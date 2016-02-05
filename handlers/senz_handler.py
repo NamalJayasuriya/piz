@@ -1,7 +1,6 @@
 import time
 import sys
 import os
-import RPi.GPIO as GPIO
 
 
 #TODO refactore paths
@@ -12,6 +11,8 @@ sys.path.append(os.path.abspath('.'))
 from senz_parser import *
 from crypto_utils import *
 from config import *
+if GPIO:
+   import RPi.GPIO as GPIO
 
 class SenzHandler():
     """
@@ -44,7 +45,9 @@ class SenzHandler():
         print 'senz sender %s' % senz.sender
         print 'senz receiver %s' % senz.receiver
 
-        data=senz.attributes 
+        data=senz.attributes
+        qtime=""
+        if "time" in senz.attributes.keys(): qtime=data["time"]
         print data
         if senz.type=='PUT':
             get={}
@@ -54,11 +57,12 @@ class SenzHandler():
                     print i,"-",data[i]
                     status=0
                     if data[i]=="on": status=1
-                    GPIO.output(sws[i],status)
+                    if GPIO: GPIO.output(sws[i],status)
                     #print "*** ",sws[i]," ",status
 		    get[i]=data[i]
+         
 
-            self.send_data("PutDone",get,senz.sender,senz.receiver)
+            self.send_data("PutDone",get,senz.sender,qtime,senz.receiver)
                   
         if senz.type=='GET':
             print 'get message'
@@ -66,8 +70,8 @@ class SenzHandler():
             for i in data:
                 if i in sws.keys():
                     get[i]='off'
-                    if GPIO.input(sws[i])==1: get[i]='on'
-            self.send_data("GetResponse",get,senz.sender,senz.receiver)        
+                    if GPIO and GPIO.input(sws[i])==1: get[i]='on'
+            self.send_data("GetResponse",get,senz.sender,qtime,senz.receiver)        
 
         if senz.type == 'DATA':
             print senz.attributes['msg']
@@ -80,8 +84,9 @@ class SenzHandler():
         receiver = userName
         sender = homeName
         swlist=""
-        for sw in gpioPorts:
-            swlist+="#"+sw[0]+" "
+        if GPIO:
+           for sw in gpioPorts:
+               swlist+="#"+sw[0]+" "
         senz = "SHARE #homez %s#time %s @%s ^%s" %(swlist,time.time(), receiver, sender)
         signed_senz = sign_senz(senz)
         self.transport.write(signed_senz)
@@ -95,14 +100,16 @@ class SenzHandler():
         # self.transport.write('senz')
         print "handled"
  
-    def send_data(self,msg,data,receiver,sender):
+    def send_data(self,msg,data,receiver,qtime,sender):
         #receiver = 'userpi'
         #sender = 'homepi'
         senz="DATA #msg "+msg
         for i in data:
             senz=senz+" #"+i+" "+str(data[i])
-
-        senz = senz+" #time %s @%s ^%s" %(time.time(),receiver, sender)
+        if qtime!="":
+           senz = senz+" #time %s @%s ^%s" %(qtime,receiver, sender)
+        else:
+           senz = senz+" #time %s @%s ^%s" %(time.time(),receiver, sender)
         print senz
         signed_senz = sign_senz(senz)
         self.transport.write(signed_senz)

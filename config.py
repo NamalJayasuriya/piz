@@ -12,11 +12,14 @@ userName=config.get("device","owner-name")
 homeName=config.get("device","device-name")
 dstate=config.get("device","state")
 
-gpioPorts=config.items("gpio")
+GPIO=False
 sws={}
-for ports in gpioPorts:
-    #print ports[0],ports[1]
-    sws[ports[0]]=int(ports[1])
+if config.has_section("gpio"):
+   GPIO=True
+   gpioPorts=config.items("gpio")
+   for ports in gpioPorts:
+       #print ports[0],ports[1]
+       sws[ports[0]]=int(ports[1])
 
 #print 'Switch-URL',host
 #print 'Port Number',port
@@ -24,5 +27,5 @@ for ports in gpioPorts:
 #print 'Switch Name',server
 #print 'Owner Name',userName
 #print 'Device Name',homeName
-#print 'GPIO ports',gpioPorts
+if GPIO: print 'GPIO ports',gpioPorts
 #print dstate
