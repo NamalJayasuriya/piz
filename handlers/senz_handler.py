@@ -13,6 +13,7 @@ from crypto_utils import *
 from config import *
 if GPIO:
    import RPi.GPIO as GPIO
+from myCamDriver import *
 
 class SenzHandler():
     """
@@ -107,14 +108,26 @@ class SenzHandler():
  
 
     def send_photo(self,receiver,qtime,sender):
-        senz="DATA #photo "
         print "Creeate photo senze"
-        senz=senz+"IMAGE"
-        if qtime!="":
-           senz = senz+" #time %s @%s ^%s" %(qtime,receiver, sender)
-        else:
-           senz = senz+" #time %s @%s ^%s" %(time.time(),receiver, sender)
-        print senz
+        cam=myCamDriver()
+        cam.takePhoto()
+        photoString=cam.readPhoto()
+        n=254
+        print len(photoString)
+        parts = [photoString[i:i+n] for i in range(0, len(photoString), n)]
+        for tmp in parts:
+            senz ='DATA #photo %s' %(tmp)
+            if qtime!="":
+               senz = senz+" #time %s @%s ^%s" %(qtime,receiver, sender)
+            else:
+               senz = senz+" #time %s @%s ^%s" %(time.time(),receiver, sender)
+            print senz
+            signed_senz = sign_senz(senz)
+            self.transport.write(signed_senz)
+
+        senz ='DATA #photo ENDPHOTO'
+        senz = senz+" #time %s @%s ^%s" %(qtime,receiver, sender)
+        #print senz
         signed_senz = sign_senz(senz)
         self.transport.write(signed_senz)
 
