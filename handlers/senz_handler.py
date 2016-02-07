@@ -65,13 +65,18 @@ class SenzHandler():
             self.send_data("PutDone",get,senz.sender,qtime,senz.receiver)
                   
         if senz.type=='GET':
-            print 'get message'
-            get={} 
-            for i in data:
-                if i in sws.keys():
-                    get[i]='off'
-                    if GPIO and GPIO.input(sws[i])==1: get[i]='on'
-            self.send_data("GetResponse",get,senz.sender,qtime,senz.receiver)        
+            print 'GET  message'
+
+            if "photo" in data:
+                print "Creeate photo senze"
+                self.send_photo(senz.sender,qtime,senz.receiver)
+            else:
+                get={} 
+                for i in data:
+                    if i in sws.keys():
+                       get[i]='off'
+                       if GPIO and GPIO.input(sws[i])==1: get[i]='on'
+                self.send_data("GetResponse",get,senz.sender,qtime,senz.receiver)        
 
         if senz.type == 'DATA':
             print senz.attributes['msg']
@@ -87,7 +92,7 @@ class SenzHandler():
         if GPIO:
            for sw in gpioPorts:
                swlist+="#"+sw[0]+" "
-        senz = "SHARE #homez %s#time %s @%s ^%s" %(swlist,time.time(), receiver, sender)
+        senz = "SHARE #homez #photo %s#time %s @%s ^%s" %(swlist,time.time(), receiver, sender)
         signed_senz = sign_senz(senz)
         self.transport.write(signed_senz)
         print signed_senz
@@ -100,12 +105,28 @@ class SenzHandler():
         # self.transport.write('senz')
         print "handled"
  
+
+    def send_photo(self,receiver,qtime,sender):
+        senz="DATA #photo "
+        print "Creeate photo senze"
+        senz=senz+"IMAGE"
+        if qtime!="":
+           senz = senz+" #time %s @%s ^%s" %(qtime,receiver, sender)
+        else:
+           senz = senz+" #time %s @%s ^%s" %(time.time(),receiver, sender)
+        print senz
+        signed_senz = sign_senz(senz)
+        self.transport.write(signed_senz)
+
+
     def send_data(self,msg,data,receiver,qtime,sender):
         #receiver = 'userpi'
         #sender = 'homepi'
         senz="DATA #msg "+msg
+       
         for i in data:
             senz=senz+" #"+i+" "+str(data[i])
+
         if qtime!="":
            senz = senz+" #time %s @%s ^%s" %(qtime,receiver, sender)
         else:
